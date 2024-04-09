@@ -1,21 +1,23 @@
 const fs = require("fs");
 const crypto = require("crypto");
-const yaml = require('js-yaml');
+const yaml = require("js-yaml");
 
-const readline = require('readline').createInterface({
+const defaults = yaml.load(fs.readFileSync(`defaults.yaml`, "utf8"));
+
+const readline = require("readline").createInterface({
   input: process.stdin,
   output: process.stdout,
   terminal: true,
 });
 
-function createSecrets() {
+function createConfig() {
   return new Promise((resolve, reject) => {
     process.stdout.write("No config.yaml file found.\n");
     
-    var sv = "secrets:\n";
+    var sv = "";
     function getFolderID() {
       readline.question("Enter your Yandex.Cloud folder id: ", folder_id => {
-        sv += `  folder_id: ${folder_id}\n`;
+        sv += `secrets:\n  folder_id: ${folder_id}\n`;
         getIAMToken();
       });
     }
@@ -23,6 +25,61 @@ function createSecrets() {
     function getIAMToken() {
       readline.question("Enter your IAM token: ", iam_token => {
         sv += `  iam_token: ${iam_token}\n`;
+        genPromptsTopicsSystem();
+      });
+    }
+
+    function genPromptsTopicsSystem() {
+      readline.question("Enter system prompt used to generate topics (empty line for default): ", str => {
+        if (str !== "") {
+          sv += `prompts:\n  gen_topics:\n    system: "${str}"\n`;
+        } else {
+          sv += `prompts:\n  gen_topics:\n    system: "${defaults.prompts.gen_topics.system.replaceAll("\"", "\\\"")}"\n`;
+        }
+        genPromptsTopicsUser();
+      });
+    }
+
+    function genPromptsTopicsUser() {
+      readline.question("Enter user prompt used to generate topics (empty line for default): ", str => {
+        if (str !== "") {
+          sv += `    user: "${str}"\n`;
+        } else {
+          sv += `    user: "${defaults.prompts.gen_topics.user.replaceAll("\"", "\\\"")}"\n`;
+        }
+        genPromptsTopicsTemperature();
+      });
+    }
+
+    function genPromptsTopicsTemperature() {
+      readline.question("Enter temperature used to generate topics (empty line for default): ", str => {
+        if (str !== "") {
+          sv += `    temperature: ${str}\n`;
+        } else {
+          sv += `    temperature: ${defaults.prompts.gen_topics.temperature}\n`;
+        }
+        genPromptsNewsSystem();
+      });
+    }
+
+    function genPromptsNewsSystem() {
+      readline.question("Enter system prompt used to generate news (empty line for default): ", str => {
+        if (str !== "") {
+          sv += `  gen_news:\n    system: "${str}"\n`;
+        } else {
+          sv += `  gen_news:\n    system: "${defaults.prompts.gen_news.system.replaceAll("\"", "\\\"")}"\n`;
+        }
+        genPromptsNewsTemperature();
+      });
+    }
+
+    function genPromptsNewsTemperature() {
+      readline.question("Enter temperature used to generate news (empty line for default): ", str => {
+        if (str !== "") {
+          sv += `    temperature: ${str}\n`;
+        } else {
+          sv += `    temperature: ${defaults.prompts.gen_news.temperature}\n`;
+        }
         createFile();
       });
     }
@@ -41,7 +98,7 @@ function createSecrets() {
 
 async function getConfig() {
   if (!fs.existsSync("config.yaml")) {
-    await createSecrets();
+    await createConfig();
   }
   return yaml.load(fs.readFileSync("config.yaml", 'utf8'));
 }
@@ -65,17 +122,17 @@ async function genNews(name) {
         "modelUri": `gpt://${config.secrets.folder_id}/yandexgpt-pro`,
         "completionOptions": {
           "stream": false,
-          "temperature": 0.65,
+          "temperature": config.prompts.gen_news.temperature,
           "maxTokens": "2000"
         },
         "messages": [
           {
             "role": "system",
-            "text": "Напиши скрытую рекламу для продукта, указанного пользователем. Текст должен не более, чем из 250 слов. Используй название бренда, который нужно прорекламировать, ровно один раз. Текст может выглядеть как, например, новостная статья. Текст должен быть в развлекательном стиле. Не добавляй никаких примечаний."
+            "text": config.prompts.gen_news.system
           },
           {
             "role": "user",
-            "text": `Напиши новость про ${entry.event} в ${entry.city}. Включи в неё рекламу ${entry.item} бренда ${entry.brand}.`
+            "text": `Напиши новость про ${entry.event} в ${entry.city}. Умомяни в ней ${entry.item} бренда ${entry.brand}.`
           }
         ]
       };
@@ -111,17 +168,17 @@ async function genNewsTopics() {
     "modelUri": `gpt://${config.secrets.folder_id}/yandexgpt-pro`,
     "completionOptions": {
       "stream": false,
-      "temperature": 0.6,
+      "temperature": config.prompts.gen_topics.temperature,
       "maxTokens": "4000"
     },
     "messages": [
       {
         "role": "system",
-        "text": "Форматируй ответ на запрос как json, содержащий массив из десяти json-объектов, каждый из которых имеет четыре поля \"event\", \"city\", \"item\" и \"brand\"."
+        "text": config.prompts.gen_topics.system
       },
       {
         "role": "user",
-        "text": "Сгенерируй 10 пар \"событие\" - \"услуга или товар, который можно прорекламировать в новости о данном событии\". Указывай город, в котором проходит событие, и название бренда, оказывающего данную услугу или производящего данный товар. Название бренда может быть вымышленным или реально существующим. Название бренда может быть на английском или русском языке. Пример одного ответа: { \"event\": \"Концерт рок-группы Угли\", \"city\": \"Москва\", \"item\": \"Электрогитары\", \"brand\": \"StrongMusic\" }"
+        "text": config.prompts.gen_topics.user
       }
     ]
   };
