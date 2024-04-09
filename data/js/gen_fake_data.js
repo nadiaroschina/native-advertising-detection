@@ -125,6 +125,28 @@ async function getConfig() {
   return yaml.load(fs.readFileSync("config.yaml", 'utf8'));
 }
 
+async function startWaiting(id, config) {
+  setTimeout(async () => {
+    const res = await fetch(`https://operation.api.cloud.yandex.net/operations/${id}`, {
+      headers: {
+        'Authorization': `Bearer ${config.secrets.iam_token}`
+      }
+    });
+    const content = await res.text();
+    if (JSON.parse(content).done === true) {
+      const name = `text${crypto.randomBytes(10).toString('hex')}.txt`;
+      var fd = fs.openSync(`${config.generated_data_path}/${name}`, "w");
+      fs.writeFileSync(fd, JSON.parse(content).response.alternatives[0].message.text);
+      fs.closeSync(fd);
+      console.log(`Created ${config.generated_data_path}/${name}`);
+
+    } else {
+      console.log(`Waiting ${id} ...`);
+      startWaiting(id, config);
+    }
+  }, 5000);
+}
+
 async function genNews(name) {
   const config = await getConfig();
 
@@ -159,7 +181,7 @@ async function genNews(name) {
         ]
       };
 
-      const res = await fetch("https://llm.api.cloud.yandex.net/foundationModels/v1/completion", {
+      const res = await fetch("https://llm.api.cloud.yandex.net/foundationModels/v1/completionAsync", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -170,13 +192,9 @@ async function genNews(name) {
       });
 
       const content = await res.text();
-      const text = JSON.parse(content).result.alternatives[0].message.text;
+      const id = JSON.parse(content).id;
 
-      const name = `text${crypto.randomBytes(10).toString('hex')}.txt`;
-      var fd = fs.openSync(`${config.generated_data_path}/${name}`, "w");
-      fs.writeFileSync(fd, text);
-      fs.closeSync(fd);
-      console.log(`Created ${config.generated_data_path}/${name}`);
+      startWaiting(id, config);
     }
   } catch {
     console.log("failure");
@@ -235,7 +253,7 @@ async function genNewsTopics() {
 async function main() {
   for (var i = 0; i < 10; i++) {
     const name = await genNewsTopics();
-    await genNews(name);
+    genNews(name);
   }
   readline.close();
   readline.removeAllListeners();
