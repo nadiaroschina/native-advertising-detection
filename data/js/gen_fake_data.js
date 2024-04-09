@@ -2,8 +2,6 @@ const fs = require("fs");
 const crypto = require("crypto");
 const yaml = require("js-yaml");
 
-const defaults = yaml.load(fs.readFileSync(`defaults.yaml`, "utf8"));
-
 const readline = require("readline").createInterface({
   input: process.stdin,
   output: process.stdout,
@@ -11,6 +9,8 @@ const readline = require("readline").createInterface({
 });
 
 function createConfig() {
+  const defaults = yaml.load(fs.readFileSync(`defaults.yaml`, "utf8"));
+
   return new Promise((resolve, reject) => {
     process.stdout.write("No config.yaml file found.\n");
     
@@ -25,14 +25,26 @@ function createConfig() {
     function getIAMToken() {
       readline.question("Enter your IAM token: ", iam_token => {
         sv += `  iam_token: ${iam_token}\n`;
-        getPromptsTopicsSystem();
+        allDefaults();
+      });
+    }
+
+    function allDefaults() {
+      readline.question("Use all default settings? [Y/n] ", str => {
+        if (str === "Y" || str === "y" || str === "") {
+          const str = fs.readFileSync("defaults.yaml");
+          sv += str;
+          createFile();
+        } else {
+          getPromptsTopicsSystem();
+        }
       });
     }
 
     function getPromptsTopicsSystem() {
       readline.question("Enter system prompt used to generate topics (empty line for default): ", str => {
         if (str !== "") {
-          sv += `prompts:\n  gen_topics:\n    system: "${str}"\n`;
+          sv += `prompts:\n  gen_topics:\n    system: "${str.replaceAll("\"", "\\\"")}"\n`;
         } else {
           sv += `prompts:\n  gen_topics:\n    system: "${defaults.prompts.gen_topics.system.replaceAll("\"", "\\\"")}"\n`;
         }
@@ -43,7 +55,7 @@ function createConfig() {
     function getPromptsTopicsUser() {
       readline.question("Enter user prompt used to generate topics (empty line for default): ", str => {
         if (str !== "") {
-          sv += `    user: "${str}"\n`;
+          sv += `    user: "${str.replaceAll("\"", "\\\"")}"\n`;
         } else {
           sv += `    user: "${defaults.prompts.gen_topics.user.replaceAll("\"", "\\\"")}"\n`;
         }
@@ -65,7 +77,7 @@ function createConfig() {
     function getPromptsNewsSystem() {
       readline.question("Enter system prompt used to generate news (empty line for default): ", str => {
         if (str !== "") {
-          sv += `  gen_news:\n    system: "${str}"\n`;
+          sv += `  gen_news:\n    system: "${str.replaceAll("\"", "\\\"")}"\n`;
         } else {
           sv += `  gen_news:\n    system: "${defaults.prompts.gen_news.system.replaceAll("\"", "\\\"")}"\n`;
         }
