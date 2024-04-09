@@ -21,7 +21,7 @@ def get_fake_add_from_text(text: str) -> str | None:
 
     try:
         lines = (response.split('Реклама:')[1]).split('\n\n')
-        lines = [line for line in lines if line not in ('*', '**')]
+        lines = [line for line in lines if line.strip() not in ('*', '**')]
         return '\n'.join(lines)
 
     except Exception:
