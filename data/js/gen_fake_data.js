@@ -25,60 +25,71 @@ function createConfig() {
     function getIAMToken() {
       readline.question("Enter your IAM token: ", iam_token => {
         sv += `  iam_token: ${iam_token}\n`;
-        genPromptsTopicsSystem();
+        getPromptsTopicsSystem();
       });
     }
 
-    function genPromptsTopicsSystem() {
+    function getPromptsTopicsSystem() {
       readline.question("Enter system prompt used to generate topics (empty line for default): ", str => {
         if (str !== "") {
           sv += `prompts:\n  gen_topics:\n    system: "${str}"\n`;
         } else {
           sv += `prompts:\n  gen_topics:\n    system: "${defaults.prompts.gen_topics.system.replaceAll("\"", "\\\"")}"\n`;
         }
-        genPromptsTopicsUser();
+        getPromptsTopicsUser();
       });
     }
 
-    function genPromptsTopicsUser() {
+    function getPromptsTopicsUser() {
       readline.question("Enter user prompt used to generate topics (empty line for default): ", str => {
         if (str !== "") {
           sv += `    user: "${str}"\n`;
         } else {
           sv += `    user: "${defaults.prompts.gen_topics.user.replaceAll("\"", "\\\"")}"\n`;
         }
-        genPromptsTopicsTemperature();
+        getPromptsTopicsTemperature();
       });
     }
 
-    function genPromptsTopicsTemperature() {
+    function getPromptsTopicsTemperature() {
       readline.question("Enter temperature used to generate topics (empty line for default): ", str => {
         if (str !== "") {
           sv += `    temperature: ${str}\n`;
         } else {
           sv += `    temperature: ${defaults.prompts.gen_topics.temperature}\n`;
         }
-        genPromptsNewsSystem();
+        getPromptsNewsSystem();
       });
     }
 
-    function genPromptsNewsSystem() {
+    function getPromptsNewsSystem() {
       readline.question("Enter system prompt used to generate news (empty line for default): ", str => {
         if (str !== "") {
           sv += `  gen_news:\n    system: "${str}"\n`;
         } else {
           sv += `  gen_news:\n    system: "${defaults.prompts.gen_news.system.replaceAll("\"", "\\\"")}"\n`;
         }
-        genPromptsNewsTemperature();
+        getPromptsNewsTemperature();
       });
     }
 
-    function genPromptsNewsTemperature() {
+    function getPromptsNewsTemperature() {
       readline.question("Enter temperature used to generate news (empty line for default): ", str => {
         if (str !== "") {
           sv += `    temperature: ${str}\n`;
         } else {
           sv += `    temperature: ${defaults.prompts.gen_news.temperature}\n`;
+        }
+        getGeneratedDataFolder();
+      });
+    }
+
+    function getGeneratedDataFolder() {
+      readline.question("Enter the folder to save generated data (empty line for default): ", str => {
+        if (str !== "") {
+          sv += `generated_data_path: ${str}\n`;
+        } else {
+          sv += `generated_data_path: ${defaults.generated_data_path}\n`;
         }
         createFile();
       });
@@ -86,7 +97,6 @@ function createConfig() {
 
     function createFile() {
       const fd = fs.openSync("config.yaml", "w");
-      sv += `generated_data_path: "../generated_data"`;
       fs.writeFileSync(fd, sv);
       fs.closeSync(fd);
       resolve(0);
