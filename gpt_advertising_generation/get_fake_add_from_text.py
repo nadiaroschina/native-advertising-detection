@@ -13,13 +13,12 @@ def get_fake_add_from_text(text: str) -> str | None:
     Реклама: <текст c рекламой продукта>
     """
 
-    response = query_to_gpt(
-        system_prompt=system_prompt,
-        user_prompt=user_prompt,
-        temperature=0.6
-    )
-
     try:
+        response = query_to_gpt(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            temperature=0.6
+        )
         lines = (response.split('Реклама:')[1]).split('\n\n')
         lines = [line for line in lines if line.strip() not in ('*', '**')]
         return '\n'.join(lines)
