@@ -161,7 +161,19 @@ async function genNews(name) {
 
     for (var i = 0; i < prompts.data.length; i++) {
       const entry = prompts.data[i];
-
+      const location = entry.location;
+      if (location === undefined) {
+        location = entry.city;
+      }
+      if (location === undefined) {
+        location = entry.country;
+      }
+      if (location === undefined) {
+        location = entry.region;
+      }
+      if (location === undefined) {
+        continue;
+      }
       var prompt = {
         "modelUri": `gpt://${config.secrets.folder_id}/yandexgpt-pro`,
         "completionOptions": {
@@ -176,7 +188,7 @@ async function genNews(name) {
           },
           {
             "role": "user",
-            "text": `Напиши новость про ${entry.event} в ${entry.location}. Умомяни в ней ${entry.item} бренда ${entry.brand}.`
+            "text": `Напиши новость про ${entry.event} в ${location}. Умомяни в ней ${entry.item} бренда ${entry.brand}.`
           }
         ]
       };
