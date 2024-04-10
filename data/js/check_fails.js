@@ -3,9 +3,11 @@ const fs = require("fs");
 const dir = fs.readdirSync("../generated_data");
 
 dir.forEach((value) => {
-    if (value === "prompts" || value === ".gitignore") {
+    if (!value.startsWith("text")) {
         return;
     }
-    const data = fs.readFileSync(value);
-    console.log(data);
+    const data = fs.readFileSync("../generated_data/" + value).toString().toLowerCase();
+    if (/undefined/.test(data) || /реклам/.test(data)) {
+        fs.rmSync("../generated_data/" + value);
+    }
 });
