@@ -176,7 +176,7 @@ async function genNews(name) {
           },
           {
             "role": "user",
-            "text": `Напиши новость про ${entry.event} в ${entry.city}. Умомяни в ней ${entry.item} бренда ${entry.brand}.`
+            "text": `Напиши новость про ${entry.event} в ${entry.location}. Умомяни в ней ${entry.item} бренда ${entry.brand}.`
           }
         ]
       };
