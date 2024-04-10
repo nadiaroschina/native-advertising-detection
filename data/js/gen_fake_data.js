@@ -250,7 +250,7 @@ async function genNewsTopics() {
 }
 
 async function main() {
-  for (var i = 0; i < 10; i++) {
+  for (var i = 0; i < 20; i++) {
     const name = await genNewsTopics();
     genNews(name);
   }
