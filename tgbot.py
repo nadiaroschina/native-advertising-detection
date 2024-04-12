@@ -17,14 +17,9 @@ bot.
 
 import logging
 
-import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.preprocessing import MaxAbsScaler
-from catboost import CatBoostClassifier
-from data.data_preprocessor import DataPreprocessor
 from telegram import ForceReply, Update
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
-import pickle
+from base_model.base_model import predict
 
 # Enable logging
 logging.basicConfig(
@@ -34,12 +29,6 @@ logging.basicConfig(
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
-
-vectorizer = pickle.load(open(("vectorizer.pickle"), "rb"))
-scaler = pickle.load(open(("scaler.pickle"), "rb"))
-model = CatBoostClassifier()
-model.load_model("catboost")
-preprocessor = DataPreprocessor()
 
 
 # Define a few command handlers. These usually take the two arguments update and
@@ -52,17 +41,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         Я бот, который на каждую отправленную текстом статью умеет говорить, есть ли там реклама""",
         reply_markup=ForceReply(selective=True),
     )
-
-
-def vectorize(X):
-    X = preprocessor.fit_transform(X)
-    bow = vectorizer.transform(X)
-    return scaler.transform(bow)
-
-
-def predict(message_text: str) -> bool:
-    new_data = vectorize(pd.Series([message_text]))
-    return model.predict(new_data)[0] == 1
 
 
 async def process_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
