@@ -1,27 +1,9 @@
 import streamlit as st
-import pandas as pd
-from catboost import CatBoostClassifier
-import pickle
-
+from base_model.base_model import predict
 import sys
+
 sys.path.append('data')
-from data_preprocessor import DataPreprocessor
 
-vectorizer = pickle.load(open(("vectorizer.pickle"), "rb"))
-scaler = pickle.load(open(("scaler.pickle"), "rb"))
-model = CatBoostClassifier()
-model.load_model("catboost")
-preprocessor = DataPreprocessor()
-
-def vectorize(X):
-    X = preprocessor.fit_transform(X)
-    bow = vectorizer.transform(X)
-    return scaler.transform(bow)
-
-
-def predict(message_text: str) -> bool:
-    new_data = vectorize(pd.Series([message_text]))
-    return model.predict(new_data)[0] == 1
 
 def main() -> None:
     placeholder = st.empty()
@@ -37,6 +19,7 @@ def main() -> None:
                 st.warning('Скорее всего, это реклама', icon="⚠️")
             else:
                 st.success('Не является рекламой', icon="✅")
+
 
 if __name__ == "__main__":
     main()
